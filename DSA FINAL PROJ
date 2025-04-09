@@ -1,0 +1,360 @@
+users = []
+causes = [
+    {"name": "Typhoon Relief", "description": "Helping typhoon victims", "target": 10000.0, "raised": 2500.0},
+    {"name": "Scholarship Fund", "description": "Education for underprivileged youth", "target": 5000.0, "raised": 1200.0}
+]
+
+clothing_items = [
+    {"name": "Winter Jacket", "type": "clothes", "size": "Adult L", "quantity": 50, "received": 0},
+    {"name": "Children's Sweater", "type": "clothes", "size": "Kids M", "quantity": 100, "received": 0},
+    {"name": "Rain Boots", "type": "shoes", "size": "Various", "quantity": 60, "received": 0},
+    {"name": "Blanket", "type": "bedding", "size": "Standard", "quantity": 40, "received": 0}
+]
+
+item_donations = [
+    {"name": "School Supplies", "description": "Notebooks and pens for students", "item_type": "supplies", "quantity": 100, "received": 30, "created_by": "org@example.com"},
+    {"name": "Clothing Drive", "description": "Winter clothes for displaced families", "item_type": "clothes", "items": clothing_items, "created_by": "org@example.com"}
+]
+
+payment_methods = ["GCash", "PayMaya", "Bank Transfer", "Credit Card"]
+
+def registration():
+    print("="*60)
+    print("       WELCOME TO DONIFY!! The Digital Donation Platform       ")
+    print("      Contribute to Causes. Make a Difference. Together.       ")
+    print("="*60)
+
+    while True:
+        action = input("\n[Login / Signup]: ").strip().lower()
+
+        if action in ["signup", "sign up"]:
+            name = input("Name: ")
+            email = input("Email: ")
+            password = input("Password: ")
+            acc_type = input("Are you an individual, organization, or admin? ").lower()
+
+            new_user = {
+                "name": name,
+                "email": email,
+                "password": password,
+                "type": acc_type,
+                "payment_methods": []
+            }
+
+            users.append(new_user)
+            print("\nRegistration successful!")
+            return new_user
+
+        elif action in ["login", "log in"]:
+            if not users:
+                print("No users found. Please signup first.")
+                continue
+
+            email = input("Email: ")
+            password = input("Password: ")
+
+            for user in users:
+                if user["email"] == email and user["password"] == password:
+                    print(f"\nWelcome back, {user['name']}!")
+                    return user
+            print("Invalid credentials.")
+        else:
+            print("Invalid option. Please choose 'Login' or 'Signup'.")
+
+def manage_payment_methods(user):
+    while True:
+        print("\n==== Payment Method Settings ====")
+        print("1. View")
+        print("2. Add")
+        print("3. Remove")
+        print("4. Back")
+
+        choice = input("Select (1-4): ")
+
+        if choice == '1':
+            if not user['payment_methods']:
+                print("No saved methods.")
+            else:
+                for i, m in enumerate(user['payment_methods'], 1):
+                    print(f"{i}. {m['type']} - {m['details']}")
+        
+        elif choice == '2':
+            for i, m in enumerate(payment_methods, 1):
+                print(f"{i}. {m}")
+            idx = int(input("Add method (1-4): ")) - 1
+
+            if 0 <= idx < len(payment_methods):
+                method = payment_methods[idx]
+                if method in ["GCash", "PayMaya"]:
+                    details = input(f"{method} Mobile Number: ")
+                elif method == "Bank Transfer":
+                    details = input("Bank Account Number: ")
+                else:
+                    details = input("Credit Card (Last 4 digits): XXXX-XXXX-XXXX-")
+                
+                user['payment_methods'].append({"type": method, "details": details})
+                print(f"{method} added.")
+            else:
+                print("Invalid option.")
+        
+        elif choice == '3':
+            if not user['payment_methods']:
+                print("No methods to remove.")
+            else:
+                for i, m in enumerate(user['payment_methods'], 1):
+                    print(f"{i}. {m['type']} - {m['details']}")
+                idx = int(input("Remove which one? ")) - 1
+                if 0 <= idx < len(user['payment_methods']):
+                    removed = user['payment_methods'].pop(idx)
+                    print(f"{removed['type']} removed.")
+                else:
+                    print("Invalid choice.")
+        
+        elif choice == '4':
+            break
+        else:
+            print("Invalid option.")
+
+def display_causes():
+    if not causes:
+        print("\nNo monetary causes yet.")
+        return
+    print("\n=== Monetary Causes ===")
+    for i, c in enumerate(causes, 1):
+        print(f"{i}. {c['name']} - {c['description']} (Target: ${c['target']} | Raised: ${c['raised']})")
+
+def display_clothing_items(clothing_items):
+    print("\nAvailable Clothing Items:")
+    print("{:<5} {:<20} {:<15} {:<10} {:<10}".format(
+        "No.", "Item Name", "Type", "Size", "Needed"))
+    print("-"*60)
+    for i, item in enumerate(clothing_items, 1):
+        print("{:<5} {:<20} {:<15} {:<10} {:<10}".format(
+            f"{i}.", item['name'], item['type'], item['size'], item['quantity']))
+
+def donate_clothing(user):
+    clothing_drive = next((item for item in item_donations if item['name'] == "Clothing Drive"), None)
+    if not clothing_drive:
+        print("No clothing drive currently available.")
+        return
+    
+    print(f"\n=== {clothing_drive['name']} ===")
+    print(clothing_drive['description'])
+    
+    while True:
+        display_clothing_items(clothing_drive['items'])
+        print("\n1. Select item to donate")
+        print("2. Finish donation")
+        
+        choice = input("Select option (1-2): ")
+        
+        if choice == '1':
+            try:
+                item_choice = int(input("Enter item number to donate: ")) - 1
+                if 0 <= item_choice < len(clothing_drive['items']):
+                    selected_item = clothing_drive['items'][item_choice]
+                    max_available = selected_item['quantity'] - selected_item['received']
+                    
+                    if max_available <= 0:
+                        print(f"\nWe've received enough {selected_item['name']}s. Thank you!")
+                        continue
+                    
+                    print(f"\nSelected: {selected_item['name']} (Size: {selected_item['size']})")
+                    print(f"Still needed: {max_available}")
+                    
+                    quantity = int(input("How many would you like to donate? "))
+                    if quantity <= 0:
+                        print("Quantity must be positive.")
+                    elif quantity > max_available:
+                        print(f"We only need {max_available} more of this item.")
+                    else:
+                        selected_item['received'] += quantity
+                        print(f"\nThank you for donating {quantity} {selected_item['name']}(s)!")
+            except ValueError:
+                print("Please enter valid numbers.")
+        
+        elif choice == '2':
+            total_donated = sum(item['received'] for item in clothing_drive['items'])
+            print(f"\nThank you for your clothing donations!")
+            print("Summary of items still needed:")
+            for item in clothing_drive['items']:
+                needed = item['quantity'] - item['received']
+                if needed > 0:
+                    print(f"- {item['name']}: {needed} more needed")
+            break
+        
+        else:
+            print("Invalid option. Please try again.")
+
+def donate_items(user):
+    print("\n=== Item Donation Requests ===")
+    for i, item in enumerate(item_donations, 1):
+        if 'items' in item:
+            total_needed = sum(clothing['quantity'] for clothing in item['items'])
+            total_received = sum(clothing['received'] for clothing in item['items'])
+            print(f"{i}. {item['name']} - {item['description']} (Total Needed: {total_needed} | Received: {total_received})")
+        else:
+            print(f"{i}. {item['name']} - {item['description']} (Type: {item['item_type']} | Needed: {item['quantity']} | Received: {item['received']})")
+    
+    try:
+        choice = int(input("\nSelect item request to contribute to (1-{}): ".format(len(item_donations)))) - 1
+        if 0 <= choice < len(item_donations):
+            if 'items' in item_donations[choice]:
+                donate_clothing(user)
+            else:
+                quantity = int(input(f"How many {item_donations[choice]['item_type']} are you donating? "))
+                if quantity <= 0:
+                    print("Quantity must be positive.")
+                    return
+                
+                item_donations[choice]['received'] += quantity
+                print(f"\nThank you for donating {quantity} {item_donations[choice]['item_type']} to {item_donations[choice]['name']}!")
+                print(f"New total received: {item_donations[choice]['received']}/{item_donations[choice]['quantity']}")
+        else:
+            print("Invalid choice.")
+    except ValueError:
+        print("Please enter valid numbers.")
+
+def process_payment(user, amount):
+    if not user['payment_methods']:
+        print("\nAdd a payment method first.")
+        manage_payment_methods(user)
+        if not user['payment_methods']:
+            return False
+    
+    print("\nSelect payment method:")
+    for i, method in enumerate(user['payment_methods'], 1):
+        print(f"{i}. {method['type']} - {method['details']}")
+    
+    while True:
+        try:
+            choice = int(input("Choose payment method (1-{}): ".format(len(user['payment_methods']))))
+            if 1 <= choice <= len(user['payment_methods']):
+                selected_method = user['payment_methods'][choice-1]
+                print(f"\nProcessing ${amount:.2f} via {selected_method['type']} ({selected_method['details']})")
+                print("Payment successful!")
+                return True
+            else:
+                print("Invalid choice. Please try again.")
+        except ValueError:
+            print("Please enter a valid number.")
+
+def donate_monetary(user):
+    display_causes()
+    if not causes:
+        return
+    
+    try:
+        choice = int(input("\nSelect cause to donate to (1-{}): ".format(len(causes)))) - 1
+        if 0 <= choice < len(causes):
+            amount = float(input("Enter donation amount: $"))
+            if amount <= 0:
+                print("Amount must be positive.")
+                return
+            
+            if process_payment(user, amount):
+                causes[choice]['raised'] += amount
+                print(f"\nThank you for donating ${amount:.2f} to {causes[choice]['name']}!")
+                print(f"New total raised: ${causes[choice]['raised']:.2f}/{causes[choice]['target']:.2f}")
+        else:
+            print("Invalid choice.")
+    except ValueError:
+        print("Please enter valid numbers.")
+
+def create_cause(user):
+    if user['type'] not in ['organization', 'admin']:
+        print("Only organizations and admins can create causes.")
+        return
+    
+    print("\n=== Create New Monetary Cause ===")
+    name = input("Cause name: ")
+    description = input("Description: ")
+    target = float(input("Target amount: $"))
+    
+    new_cause = {
+        "name": name,
+        "description": description,
+        "target": target,
+        "raised": 0.0
+    }
+    causes.append(new_cause)
+    print(f"\nNew cause '{name}' created successfully!")
+
+def create_item_request(user):
+    if user['type'] not in ['organization', 'admin']:
+        print("Only organizations and admins can create item requests.")
+        return
+    
+    print("\n=== Create New Item Donation Request ===")
+    name = input("Item name: ")
+    description = input("Description: ")
+    item_type = input("Item type (e.g., clothes, supplies, food): ")
+    quantity = int(input("Quantity needed: "))
+    
+    new_item = {
+        "name": name,
+        "description": description,
+        "item_type": item_type,
+        "quantity": quantity,
+        "received": 0,
+        "created_by": user['email']
+    }
+    item_donations.append(new_item)
+    print(f"\nNew item request '{name}' created successfully!")
+
+def main_menu(user):
+    while True:
+        print("\n==== MAIN MENU ====")
+        print("1. Browse Monetary Causes")
+        print("2. Browse Item Donations")
+        print("3. Payment Methods")
+        if user['type'] in ['organization', 'admin']:
+            print("4. Create New Cause")
+            print("5. Create Item Request")
+            print("6. Logout")
+        else:
+            print("4. Logout")
+        
+        choice = input("\nSelect option: ")
+        
+        if user['type'] in ['organization', 'admin']:
+            if choice == '1':
+                donate_monetary(user)
+            elif choice == '2':
+                donate_items(user)
+            elif choice == '3':
+                manage_payment_methods(user)
+            elif choice == '4':
+                create_cause(user)
+            elif choice == '5':
+                create_item_request(user)
+            elif choice == '6':
+                print("Logged out successfully.")
+                break
+            else:
+                print("Invalid option.")
+        else:
+            if choice == '1':
+                donate_monetary(user)
+            elif choice == '2':
+                donate_items(user)
+            elif choice == '3':
+                manage_payment_methods(user)
+            elif choice == '4':
+                print("Logged out successfully.")
+                break
+            else:
+                print("Invalid option.")
+
+def main():
+    while True:
+        user = registration()
+        main_menu(user)
+        
+        again = input("\nWould you like to login again? (yes/no): ").lower()
+        if again != 'yes':
+            print("\nThank you for using Donify! Have a great day!")
+            break
+
+if __name__ == "__main__":
+    main()
